@@ -17,7 +17,8 @@ has ark => ( is => 'rw', isa => 'Koha::Contrib::ARK' );
 
 
 sub write {
-    my ($self, $record) = @_;
+    my ($self, $br) = @_;
+    my ($biblionumber, $record) = @$br;
 
     return unless $record;
 

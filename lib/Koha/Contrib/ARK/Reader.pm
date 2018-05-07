@@ -21,7 +21,7 @@ has ark => ( is => 'rw', isa => 'Koha::Contrib::ARK' );
 =attr emptyark
 
 If true, read biblio record without ARK. If false, read biblio records with
-ARK.
+ARK. By default, false.
 
 =cut
 has emptyark => (
@@ -39,6 +39,7 @@ sub BUILD {
         "SELECT biblionumber FROM biblio_metadata WHERE " .
         $self->ark->field_query .
         ($self->emptyark ? " =''" : " <> ''" );
+    $self->ark->log->debug("Reader, query = $query\n");
     my $sth = C4::Context->dbh->prepare($query);
     $sth->execute;
     $self->sth_bn($sth);
@@ -47,13 +48,15 @@ sub BUILD {
 
 sub read {
     my $self = shift;
-    my $record;
-    if ( my ($bn) = $self->sth_bn->fetchrow() ) {
-        $record = GetMarcBiblio({ biblionumber => $bn});
-        $record = MARC::Moose::Record::new_from($record, 'Legacy');
-    }
-    $self->ark->log->info("ORIGINAL BIBLIO:\n", $record->as('Text')) if $record;
-    return $record;
+
+    my ($biblionumber) = $self->sth_bn->fetchrow();
+    return unless $biblionumber;
+
+    my $record = GetMarcBiblio({ biblionumber => $biblionumber });
+    $record = MARC::Moose::Record::new_from($record, 'Legacy');
+    $self->ark->log->info("Biblio #$biblionumber\n");
+    $self->ark->log->debug("ORIGINAL BIBLIO:\n", $record->as('Text')) if $record;
+    return [$biblionumber, $record];
 }
 
 

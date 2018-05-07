@@ -28,18 +28,15 @@ sub usage {
 usage() if $help || @ARGV != 1;
 
 my $cmd = shift @ARGV;
+usage() if $cmd !~ /clear|update|check/;
 
 my $ark = Koha::Contrib::ARK->new(
+    cmd          => $cmd,
     log_filename => 'koha-ark.log',
     verbose      => $verbose,
     doit         => $doit,
 );
-if ( $cmd eq 'clear' || $cmd eq 'update' ) {
-    $ark->run( name => $cmd, log => 'info' );
-}
-else {
-    usage();
-}
+$ark->run();
 
 
 =pod

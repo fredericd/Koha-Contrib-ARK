@@ -19,47 +19,33 @@ L<Koha::Contrib::ARK> object.
 has ark => ( is => 'rw', isa => 'Koha::Contrib::ARK' );
 
 
-
 sub convert {
-    my ($self, $record) = @_;
+    my ($self, $br) = @_;
+    my ($biblionumber, $record) = @$br;
 
     my $a = $self->ark->c->{ark};
-    my $ark = $a->{ARK};
-    for my $var ( qw/ NMHA NAAN / ) {
-        my $value = $a->{$var};
-        $ark =~ s/{$var}/$value/;
-    }
-    my $kfield = $a->{koha}->{id};
-    my $id = $record->field($kfield->{tag});
-    if ( $id ) {
-        $id = $kfield->{letter}
-            ? $id->subfield($kfield->{letter})
-            : $id->value;
-    }
-    if ($id ) {
-        $ark =~ s/{id}/$id/;
-        $kfield = $a->{koha}->{ark};
-        if ( $kfield->{letter} ) {
-            for my $field ( $record->field($kfield->{tag}) ) {
-                my @subf = grep { $_->[0] ne $kfield->{letter}; } @{$field->subf};
-                $field->subf( \@subf );
-            }
-            $record->fields( [ grep {
-                $_->tag eq $kfield->{tag} && @{$_->subf} == 0 ? 0 : 1;
-            } @{ $record->fields } ] );
+    my $ark = $self->ark->build_ark($biblionumber, $record);
+    $self->ark->log->info("Generated ARK: $ark\n");
+    my $kfield = $a->{koha}->{ark};
+    if ( $kfield->{letter} ) { # datafield
+        if ( my $field = $record->field($kfield->{tag}) ) {
+            my @subf = grep { $_->[0] ne $kfield->{letter}; } @{$field->subf};
+            push @subf, [ $kfield->{letter} => $ark ];
+            $field->subf( \@subf );
         }
         else {
-            $record->delete($kfield->{tag});
-            $record->append( MARC::Moose::Field::Control->new(
-                tag => $kfield->{tag},
-                value => $ark ) );
+            $record->append( MARC::Moose::Field::Std->new(
+                tag => $kfield->{tag}, subf => [ [ $kfield->{letter} => $ark ] ] ) );
         }
     }
     else {
-        $self->ark->log->warning("This biblio record has no ID field\n")
+        $record->delete($kfield->{tag});
+        $record->append( MARC::Moose::Field::Control->new(
+            tag => $kfield->{tag},
+            value => $ark ) );
     }
 
-    return $record;
+    return [$biblionumber, $record];
 }
 
 
