@@ -4,14 +4,26 @@ use MARC::Moose::Field;
 use MARC::Moose::Field::Control;
 use MARC::Moose::Field::Std;
 use MARC::Moose::Parser::Marcxml;
+use C4::Context;
 use Koha::Contrib::ARK;
 use YAML;
 use JSON;
 
-
 use Test::More tests => 16;
 use Test::MockModule;
-use t::Mocks;
+
+
+my $ark_conf = {
+    ark => {
+        "NMHA" => "myspecial.test.fr",
+        "NAAN" => "12345",
+        "ARK" => "http://{NMHA}/ark:/{NAAN}/catalog{id}",
+        "koha" => {
+          "id" => { "tag" => "001" },
+          "ark" => { "tag" => "090", "letter" => "z" }
+        }
+    }
+};
 
 
 my $xml_chunk = <<EOS;
@@ -67,23 +79,11 @@ my $xml_chunk = <<EOS;
 </record>
 EOS
 
-my $ark_conf = {
-    ark => {
-        "NMHA" => "myspecial.test.fr",
-        "NAAN" => "12345",
-        "ARK" => "http://{NMHA}/ark:/{NAAN}/catalog{id}",
-        "koha" => {
-          "id" => { "tag" => "001" },
-          "ark" => { "tag" => "090", "letter" => "z" }
-        }
-    }
-};
+my $m = Test::MockModule->new('C4::Context');
+$m->mock('preference', sub { return to_json($ark_conf, {pretty => 1}); });
 
 my $parser = MARC::Moose::Parser::Marcxml->new();
 my $record = $parser->parse( $xml_chunk );
-
-my $ark_conf_json = to_json($ark_conf, {pretty=>1});
-t::Mocks::mock_preference('ARK_CONF', $ark_conf_json);
 
 my $ark = Koha::Contrib::ARK->new();
 is( $ark->cmd, 'check', "->cmd default value is 'check'" );
@@ -111,8 +111,6 @@ $record->append( MARC::Moose::Field::Control->new( tag => '001', value => '1234'
 
 # Take the ID in 009 field rather than 001
 $ark_conf->{ark}->{koha}->{id} = { tag => '009' };
-$ark_conf_json = to_json($ark_conf, {pretty=>1});
-t::Mocks::mock_preference('ARK_CONF', $ark_conf_json);
 $ark = Koha::Contrib::ARK->new();
 is(
     $ark->build_ark(1234, $record),
@@ -126,8 +124,6 @@ is(
 
 # Take the ID in 942$a
 $ark_conf->{ark}->{koha}->{id} = { tag => '942', letter => 'a' };
-$ark_conf_json = to_json($ark_conf, {pretty=>1});
-t::Mocks::mock_preference('ARK_CONF', $ark_conf_json);
 $ark = Koha::Contrib::ARK->new();
 is(
     $ark->build_ark(1234, $record),
@@ -148,8 +144,6 @@ $clearer->convert([1234, $record]);
 ok( !$record->field('090'), "ARK field 090 deleted" );
 
 $ark_conf->{ark}->{koha}->{ark} = { tag => '003' };
-$ark_conf_json = to_json($ark_conf, {pretty=>1});
-t::Mocks::mock_preference('ARK_CONF', $ark_conf_json);
 $ark = Koha::Contrib::ARK->new();
 $updater = Koha::Contrib::ARK::Updater->new( ark => $ark );
 $updater->convert([1234, $record]);

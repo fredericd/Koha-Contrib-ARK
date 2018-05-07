@@ -1,5 +1,5 @@
 package Koha::Contrib::ARK::Writer;
-# ABSTRACT: Read Koha biblio records with/without ARK
+# ABSTRACT: Write biblio records into Koha Catalog
 use Moose;
 
 with 'MooseX::RW::Writer';

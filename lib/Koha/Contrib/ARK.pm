@@ -11,6 +11,7 @@ use Try::Tiny;
 use Log::Dispatch;
 use Log::Dispatch::Screen;
 use Log::Dispatch::File;
+use C4::Context;
 use Koha::Contrib::ARK::Updater;
 use Koha::Contrib::ARK::Clearer;
 

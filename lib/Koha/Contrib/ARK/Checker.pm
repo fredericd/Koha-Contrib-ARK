@@ -1,5 +1,5 @@
-package Koha::Contrib::ARK::Clearer;
-# ABSTRACT: Clear Koha ARK field
+package Koha::Contrib::ARK::Checker;
+# ABSTRACT: Check Koha ARK field
 use Moose;
 
 with 'AnyEvent::Processor::Converter';
@@ -27,12 +27,11 @@ sub convert {
     my $ka = $ark->c->{ark}->{koha}->{ark};
     my ($tag, $letter) = ($ka->{tag}, $ka->{letter});
 
-    $ark->log->debug("Remove ARK field\n");
+    $ark->log->debug("Check ARK field\n");
     if ( $letter ) {
-        for my $field ( $record->field($tag) ) {
-            my @subf = grep { $_->[0] ne $letter; } @{$field->subf};
-            $field->subf( \@subf );
-        }
+        my $field = $record->field($tag);
+        my @subf = grep { $_->[0] ne $letter; } @{$field->subf};
+        $field->subf( \@subf );
         $record->fields( [ grep {
             $_->tag eq $tag && @{$_->subf} == 0 ? 0 : 1;
         } @{ $record->fields } ] );
