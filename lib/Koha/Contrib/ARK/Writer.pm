@@ -26,7 +26,7 @@ sub write {
         my $fc = GetFrameworkCode($biblionumber);
         ModBiblio( $record->as('Legacy'), $biblionumber, $fc );
     }
-    $self->ark->log->info("BIBLIO AFTER PROCESSING:\n", $record->as('Text'));
+    $self->ark->log->debug("BIBLIO AFTER PROCESSING:\n", $record->as('Text'));
 }
 
 

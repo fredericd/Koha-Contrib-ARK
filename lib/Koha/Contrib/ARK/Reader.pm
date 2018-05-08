@@ -53,7 +53,7 @@ sub BUILD {
     my $total = $dbh->selectall_arrayref("SELECT COUNT(*) $fromwhere");
     $total = $total->[0][0];
     $self->total( $total );
-    $self->ark->log->debug("Reader, number of record to process = $total\n");
+    $self->ark->log->info("Number of records to process = $total\n");
 
     my $sth = $dbh->prepare("SELECT biblionumber $fromwhere");
     $sth->execute;

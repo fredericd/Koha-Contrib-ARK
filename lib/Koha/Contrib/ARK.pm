@@ -100,7 +100,10 @@ sub BUILD {
     my $self = shift;
 
     my $dt = DateTime->now();
-    $self->log->info("\n" . ('-' x 80) . "\nkoha-ark: start -- " . $dt->ymd . " " . $dt->hms . "\n");
+    $self->log->info(
+        "\n" . ('-' x 80) . "\nkoha-ark: start ".
+        $self->cmd . " -- " . $dt->ymd . " " . $dt->hms . "\n"
+    );
     $self->log->info("** TEST MODE **\n") unless $self->doit;
     $self->log->debug("Reading ARK_CONF\n");
     my $c = C4::Context->preference("ARK_CONF");
@@ -185,12 +188,15 @@ sub build_ark {
 sub run {
     my $self = shift;
 
-    my $progress = Term::ProgressBar->new({ count => $self->reader->total });
+    my $progress;
+    $progress = Term::ProgressBar->new({ count => $self->reader->total })
+        if $self->verbose;
     my $next_update = 0;
     while ( my $record = $self->reader->read() ) {
         $record = $self->converter->convert($record);
-        $self->writer($record);
+        $self->writer->write($record);
         my $count = $self->reader->count;
+        next unless $progress;
         $next_update = $progress->update($count) if $count >= $next_update;
     }
 }
