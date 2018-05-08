@@ -2,8 +2,6 @@ package Koha::Contrib::ARK;
 # ABSTRACT: ARK Management
 use Moose;
 
-extends 'AnyEvent::Processor::Conversion';
-
 use Modern::Perl;
 use JSON;
 use DateTime;
@@ -14,6 +12,7 @@ use Log::Dispatch::File;
 use C4::Context;
 use Koha::Contrib::ARK::Updater;
 use Koha::Contrib::ARK::Clearer;
+use Term::ProgressBar;
 
 
 
@@ -83,6 +82,11 @@ has log => (
         return $log;
     }
 );
+
+
+has reader => (is => 'rw');
+has writer => (is => 'rw');
+has converter => (is => 'rw');
 
 
 sub fatal {
@@ -178,17 +182,18 @@ sub build_ark {
 }
 
 
-override 'start_message' => sub {
+sub run {
     my $self = shift;
-    say "ARK processing: ", $self->cmd;
-};
 
-
-override 'end_message' => sub {
-    my $self = shift;
-    say "Number of biblio records processed: ", $self->count;
-};
-
+    my $progress = Term::ProgressBar->new({ count => $self->reader->total });
+    my $next_update = 0;
+    while ( my $record = $self->reader->read() ) {
+        $record = $self->converter->convert($record);
+        $self->writer($record);
+        my $count = $self->reader->count;
+        $next_update = $progress->update($count) if $count >= $next_update;
+    }
+}
 
 __PACKAGE__->meta->make_immutable;
 1;
