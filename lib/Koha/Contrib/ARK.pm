@@ -1,24 +1,21 @@
 package Koha::Contrib::ARK;
 # ABSTRACT: ARK Management
-use Moose;
 
+use Moose;
 use Modern::Perl;
 use JSON;
 use DateTime;
 use Try::Tiny;
-use Log::Dispatch;
-use Log::Dispatch::Screen;
-use Log::Dispatch::File;
-use C4::Context;
 use Koha::Contrib::ARK::Reader;
 use Koha::Contrib::ARK::Writer;
 use Koha::Contrib::ARK::Update;
 use Koha::Contrib::ARK::Clear;
 use Koha::Contrib::ARK::Check;
 use Term::ProgressBar;
+use C4::Context;
 
 
-# Action id / message
+# Action/error id/message
 my $raw_actions = <<EOS;
 found_right_field      ARK found in the right field
 found_wrong_field      ARK found in the wrong field
@@ -42,8 +39,6 @@ my $what = { map {
     /^(\w*) *(.*)$/;
     { $1 => { id => $1, msg => $2 } }
 } split /\n/, $raw_actions };
-
-$Koha::Contrib::ARK::what = $what;
 
 
 has c => ( is => 'rw', isa => 'HashRef' );
@@ -75,12 +70,14 @@ Is the process effective?
 =cut
 has doit => ( is => 'rw', isa => 'Bool', default => 0 );
 
+
 =attr verbose
 
 Operate in verbose mode
 
 =cut
 has verbose => ( is => 'rw', isa => 'Bool', default => 0 );
+
 
 =attr debug
 
@@ -92,22 +89,38 @@ has debug => ( is => 'rw', isa => 'Bool', default => 0 );
 
 has field_query => ( is => 'rw', isa => 'Str' );
 
-has reader => (is => 'rw');
-has writer => (is => 'rw');
+has reader => (is => 'rw', isa => 'Koha::Contrib::ARK::Reader' );
+has writer => (is => 'rw', isa => 'Koha::Contrib::ARK::Writer' );
 has action => (is => 'rw', isa => 'Koha::Contrib::ARK::Action' );
 
 
+=attr explain
+
+A HASH containing the full explanation of the pending processing
+
+=cut
 has explain => (
     is => 'rw',
     isa => 'HashRef',
 );
 
+
+=attr current
+
+What happens on the current biblio record?
+
+=cut
 has current => (
     is => 'rw',
     isa => 'HashRef',
 );
 
 
+=method set_current($biblionumber, $record)
+
+Set the current biblio record. Called by the biblio records reader.
+
+=cut
 sub set_current {
     my ($self, $biblionumber, $record) = @_;
     my $current = { biblionumber => $biblionumber };
@@ -116,6 +129,12 @@ sub set_current {
 }
     
 
+=method error($id, $more)
+
+Set an error code $id to the L<explain> processing status. $more can contain
+more information.
+
+=cut
 sub error {
     my ($self, $id, $more) = @_;
     my %r = %{$what->{$id}};
@@ -283,8 +302,7 @@ sub run {
         $progress = Term::ProgressBar->new({ count => $self->reader->total })
             if $self->verbose;
         my $next_update = 0;
-        while ( my $br = $self->reader->read() ) {
-            my ($biblionumber, $record) = @$br;
+        while ( my ($biblionumber, $record) = $self->reader->read() ) {
             $self->action->action($biblionumber, $record);
             if ( $self->cmd ne 'check' ) {
                 $self->writer->write($biblionumber, $record);

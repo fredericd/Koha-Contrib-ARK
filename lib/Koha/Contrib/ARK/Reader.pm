@@ -1,14 +1,14 @@
 package Koha::Contrib::ARK::Reader;
 # ABSTRACT: Read Koha biblio records with/without ARK
+
 use Moose;
-
-with 'MooseX::RW::Reader';
-
 use Moose::Util::TypeConstraints;
 use Modern::Perl;
 use C4::Context;
 use C4::Biblio;
 use MARC::Moose::Record;
+
+with 'MooseX::RW::Reader';
 
 
 =attr ark
@@ -34,6 +34,7 @@ has select => (
     isa => 'BiblioSelect',
     default => 'All',
 );
+
 
 =attr total
 
@@ -79,14 +80,8 @@ sub read {
     
     $self->ark->set_current( $biblionumber, $record );
 
-    return [$biblionumber, $record];
+    return ($biblionumber, $record);
 }
 
-
-sub percentage {
-    my $self = shift;
-    my $p = ($self->count * 100) / $self->total;
-    return sprintf("%.2f", $p);
-}
 
 1;

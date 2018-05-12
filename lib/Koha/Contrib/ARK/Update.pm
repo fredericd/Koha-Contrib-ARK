@@ -1,13 +1,10 @@
 package Koha::Contrib::ARK::Update;
 # ABSTRACT: Update Koha ARK fields
 
-
 use Moose;
-
-with 'Koha::Contrib::ARK::Action';
-
 use Modern::Perl;
 
+with 'Koha::Contrib::ARK::Action';
 
 
 sub action {
@@ -37,8 +34,7 @@ sub action {
             $self->ark->what_append('remove_existing');
         }
         $record->append( MARC::Moose::Field::Control->new(
-            tag => $kfield->{tag},
-            value => $ark ) );
+            tag => $kfield->{tag}, value => $ark ) );
     }
     $self->ark->what_append('add');
 }

@@ -2,11 +2,9 @@ package Koha::Contrib::ARK::Clear;
 # ABSTRACT: Clear Koha ARK field
 
 use Moose;
-
-with 'Koha::Contrib::ARK::Action';
-
 use Modern::Perl;
 
+with 'Koha::Contrib::ARK::Action';
 
 
 sub action {

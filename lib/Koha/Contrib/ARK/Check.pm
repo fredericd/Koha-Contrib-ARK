@@ -1,11 +1,10 @@
 package Koha::Contrib::ARK::Check;
 # ABSTRACT: Check Koha ARK field
+
 use Moose;
-
-with 'Koha::Contrib::ARK::Action';
-
 use Modern::Perl;
 
+with 'Koha::Contrib::ARK::Action';
 
 
 sub action {
@@ -50,9 +49,7 @@ sub action {
             }
         }
     }
-    unless ($found) {
-        $self->ark->what_append('not_found');
-    }
+    $self->ark->what_append('not_found')  unless $found;
 }
 
 

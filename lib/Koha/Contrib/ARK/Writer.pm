@@ -1,11 +1,11 @@
 package Koha::Contrib::ARK::Writer;
 # ABSTRACT: Write biblio records into Koha Catalog
+
 use Moose;
-
-with 'MooseX::RW::Writer';
-
 use Modern::Perl;
 use C4::Biblio;
+
+with 'MooseX::RW::Writer';
 
 
 =attr ark
