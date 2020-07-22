@@ -124,7 +124,7 @@ Set the current biblio record. Called by the biblio records reader.
 sub set_current {
     my ($self, $biblionumber, $record) = @_;
     my $current = { biblionumber => $biblionumber };
-    $current->{ record } = tojson($record) if $self->debug;
+    $current->{ record } = tojson($record) if $record && $self->debug;
     $self->current($current);
 }
     
@@ -303,11 +303,13 @@ sub run {
             if $self->verbose;
         my $next_update = 0;
         while ( my ($biblionumber, $record) = $self->reader->read() ) {
-            $self->action->action($biblionumber, $record);
-            if ( $self->cmd ne 'check' ) {
-                $self->writer->write($biblionumber, $record);
+            if ( $record ) {
+                $self->action->action($biblionumber, $record);
+                if ( $self->cmd ne 'check' ) {
+                    $self->writer->write($biblionumber, $record);
+                }
+                push @{$self->explain->{result}->{records}}, $self->current;
             }
-            push @{$self->explain->{result}->{records}}, $self->current;
             my $count = $self->reader->count;
             next unless $progress;
             $next_update = $progress->update($count) if $count >= $next_update;
