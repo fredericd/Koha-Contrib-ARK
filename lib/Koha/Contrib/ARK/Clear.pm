@@ -16,7 +16,9 @@ sub action {
     my $ka = $ark->c->{ark}->{koha}->{ark};
     my ($tag, $letter) = ($ka->{tag}, $ka->{letter});
 
-    $self->ark->what_append('clear');
+    my $more = $ka->{tag};
+    $more .= '$' . $ka->{letter} if $ka->{letter};
+    $self->ark->what_append('clear', $more);
     if ( $letter ) {
         for my $field ( $record->field($tag) ) {
             my @subf = grep {

@@ -209,6 +209,7 @@ sub BUILD {
         $self->error('err_pref_var_letter', "koha.$name.letter")
             if $field->{tag} !~ /^00[0-9]$/ && ! $field->{letter};
     }
+    $self->explain->{ark_conf} = $c;
 
     my $id = $a->{koha}->{ark};
     my $field_query =
