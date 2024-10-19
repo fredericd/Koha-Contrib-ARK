@@ -189,7 +189,7 @@ For exemple, if ARK\_CONF is missing, the file will report the issue:
 
 # AUTHOR
 
-Frédéric Demians &lt;f.demians@tamil.fr>
+Frédéric Demians <f.demians@tamil.fr>
 
 # COPYRIGHT AND LICENSE
 
