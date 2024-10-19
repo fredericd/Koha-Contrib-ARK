@@ -37,6 +37,7 @@ sub action {
             tag => $kfield->{tag}, value => $ark ) );
     }
     $self->ark->what_append('add');
+    $self->ark->current_modified();
 }
 
 

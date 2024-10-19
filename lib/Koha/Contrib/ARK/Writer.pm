@@ -3,7 +3,7 @@ package Koha::Contrib::ARK::Writer;
 
 use Moose;
 use Modern::Perl;
-use C4::Biblio;
+use C4::Biblio qw/ ModBiblio /;
 
 with 'MooseX::RW::Writer';
 
@@ -17,14 +17,13 @@ has ark => ( is => 'rw', isa => 'Koha::Contrib::ARK' );
 
 
 sub write {
-    my ($self, $biblionumber, $record) = @_;
+    my ($self, $biblio, $record) = @_;
 
     return unless $record;
 
     my $a = $self->ark;
     if ($a->doit) {
-        my $fc = GetFrameworkCode($biblionumber);
-        ModBiblio( $record->as('Legacy'), $biblionumber, $fc );
+        ModBiblio( $record->as('Legacy'), $biblio->biblionumber, $biblio->frameworkcode);
     }
     $a->current->{after} = Koha::Contrib::ARK::tojson($record)
         if $a->debug;

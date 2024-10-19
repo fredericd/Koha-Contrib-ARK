@@ -4,7 +4,7 @@ koha-ark - Manage ARK identifiers in a Koha Catalog
 
 # VERSION
 
-version 1.0.3
+version 1.1.0
 
 # DESCRIPTION
 
@@ -80,10 +80,19 @@ http://myspecial.institution.fr/ark:/12345/biblio9877
 koha-ark clear --doit
 koha-ark update --noverbose --doit
 koha-ark update --debug
+koha-ark fix
 koha-ark check
+koha-ark check --fromwhere "biblionumber BETWEEN 100 AND 200"
 ```
 
 # PARAMETERS
+
+- **--fromwhere**
+
+  WHERE clause of the SELECT biblio_metadata used to retrieved biblio records
+  from biblio_metadata table. For example: `biblionumber BETWEEN 100 AND
+  200` or `ExtractValue(metdatata,
+  '//datafield[tag=099]/subfield[@code="a"]'='a')`.
 
 - **--doit**
 
@@ -184,7 +193,7 @@ Frédéric Demians &lt;f.demians@tamil.fr>
 
 # COPYRIGHT AND LICENSE
 
-This software is Copyright (c) 2018 by Fréderic Demians.
+This software is Copyright (c) 2024 by Fréderic Demians.
 
 This is free software, licensed under:
 

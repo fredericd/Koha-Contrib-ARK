@@ -35,6 +35,11 @@ has select => (
     default => 'All',
 );
 
+has fromwhere => (
+    is => 'rw',
+    isa => 'Str'
+);
+
 
 =attr total
 
@@ -52,10 +57,17 @@ sub BUILD {
  
     my $dbh = C4::Context->dbh;
     my $fromwhere = "FROM biblio_metadata";
-    $fromwhere .= " WHERE " .
-        $self->ark->field_query .
-        ($self->select eq 'WithoutArk' ? " =''" : " <> ''" )
-            if $self->select ne 'All';
+    if ($self->fromwhere) {
+        $fromwhere .= " WHERE " . $self->fromwhere;
+    }
+    else {
+        $fromwhere .= " WHERE " .
+            $self->ark->field_query .
+            ($self->select eq 'WithoutArk' ? " =''" : " <> ''" )
+                if $self->select ne 'All';
+    }
+
+    #$fromwhere = "FROM biblio_metadata WHERE biblionumber=875167";
 
     my $total = $dbh->selectall_arrayref("SELECT COUNT(*) $fromwhere");
     $total = $total->[0][0];
@@ -75,12 +87,13 @@ sub read {
 
     $self->count( $self->count + 1 );
 
-    my $record = GetMarcBiblio({ biblionumber => $biblionumber });
-    $record = MARC::Moose::Record::new_from($record, 'Legacy');
-    
-    $self->ark->set_current( $biblionumber, $record );
+    my ($biblio, $record);
+    if ($biblio = Koha::Biblios->find( $biblionumber )) {
+        $record = MARC::Moose::Record::new_from($biblio->metadata->record(), 'Legacy');
+    } 
+    $self->ark->set_current( $biblio, $record );
 
-    return ($biblionumber, $record);
+    return ($biblio, $record);
 }
 
 

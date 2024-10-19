@@ -11,6 +11,7 @@ use Koha::Contrib::ARK::Writer;
 use Koha::Contrib::ARK::Update;
 use Koha::Contrib::ARK::Clear;
 use Koha::Contrib::ARK::Check;
+use Koha::Contrib::ARK::Fix;
 use Term::ProgressBar;
 use C4::Context;
 
@@ -19,10 +20,12 @@ use C4::Context;
 my $raw_actions = <<EOS;
 found_right_field      ARK found in the right field
 found_wrong_field      ARK found in the wrong field
+found_bad_ark          Bad ARK found in ARK field
 not_found              ARK not found
 build                  ARK Build
 clear                  Clear ARK field
 add                    Add ARK field
+fix                    Fix bad ARK found in correct ARK field
 remove_existing        Remove existing field while adding ARK field
 generated              ARK generated
 use_biblionumber       No koha.id field, use biblionumber to generate ARK
@@ -56,12 +59,19 @@ has cmd => (
     trigger => sub {
         my ($self, $cmd) = @_;
         $self->error("Invalid command: $cmd\n")
-            if $cmd !~ /check|clear|update/;
+            if $cmd !~ /check|clear|update|fix/;
         return $cmd;
     },
     default => 'check',
 );
 
+
+=attr fromwhere
+
+WHERE clause to select biblio records in biblio_metadata table
+
+=cut
+has fromwhere => ( is => 'rw', isa => 'Str' );
 
 =attr doit
 
@@ -116,18 +126,27 @@ has current => (
 );
 
 
-=method set_current($biblionumber, $record)
+=method set_current($biblio, $record)
 
 Set the current biblio record. Called by the biblio records reader.
 
 =cut
 sub set_current {
-    my ($self, $biblionumber, $record) = @_;
-    my $current = { biblionumber => $biblionumber };
+    my ($self, $biblio, $record) = @_;
+    my $current = {
+        biblionumber => $biblio ? $biblio->biblionumber : 0,
+        modified => 0,
+    };
     $current->{ record } = tojson($record) if $record && $self->debug;
     $self->current($current);
 }
-    
+
+
+sub current_modified {
+    my $self = shift;
+    $self->current->{modified} = 1;
+}
+
 
 =method error($id, $more)
 
@@ -224,9 +243,10 @@ sub BUILD {
 
     # Instanciation reader/writer/converter
     $self->reader( Koha::Contrib::ARK::Reader->new(
-        ark => $self,
-        select => $self->cmd eq 'update' ? 'WithoutArk' :
-                  $self->cmd eq 'clear'  ? 'WithArk' : 'All',
+        ark         => $self,
+        fromwhere  => $self->fromwhere,
+        select     => $self->cmd eq 'update' ? 'WithoutArk' :
+                      $self->cmd eq 'clear'  ? 'WithArk' : 'All',
     ) );
     $explain->{result} = {
         count => $self->reader->total,
@@ -236,6 +256,7 @@ sub BUILD {
     $self->writer( Koha::Contrib::ARK::Writer->new( ark => $self ) );
     $self->action(
         $self->cmd eq 'check'  ? Koha::Contrib::ARK::Check->new( ark => $self ) :
+        $self->cmd eq 'fix'    ? Koha::Contrib::ARK::Fix->new( ark => $self ) :
         $self->cmd eq 'update' ? Koha::Contrib::ARK::Update->new( ark => $self ) :
                                  Koha::Contrib::ARK::Clear->new( ark => $self )
     );
@@ -262,6 +283,7 @@ sub build_ark {
         $id = $kfield->{letter}
             ? $id->subfield($kfield->{letter})
             : $id->value;
+        $id =~ s/^ *//; $id =~ s/ *$//; # trim left/right
     }
     unless ($id) {
         $self->what_append('use_biblionumber');
@@ -303,11 +325,11 @@ sub run {
         $progress = Term::ProgressBar->new({ count => $self->reader->total })
             if $self->verbose;
         my $next_update = 0;
-        while ( my ($biblionumber, $record) = $self->reader->read() ) {
+        while ( my ($biblio, $record) = $self->reader->read() ) {
             if ( $record ) {
-                $self->action->action($biblionumber, $record);
-                if ( $self->cmd ne 'check' ) {
-                    $self->writer->write($biblionumber, $record);
+                $self->action->action($biblio->biblionumber, $record);
+                if ( $self->cmd ne 'check' && $self->current->{modified} ) {
+                    $self->writer->write($biblio, $record);
                 }
                 push @{$self->explain->{result}->{records}}, $self->current;
             }

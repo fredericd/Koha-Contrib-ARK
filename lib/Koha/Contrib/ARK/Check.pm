@@ -19,6 +19,15 @@ sub action {
     my $ark_value = $self->ark->build_ark($biblionumber, $record);
     # Searching ARK everywhere
     my $found = 0;
+
+    # Is a bad ARK found in the correct field?
+    if (my $field = $record->field($tag)) {
+        my $value = $letter ? $field->subfield($letter) : $field->value;
+        $self->ark->what_append('found_bad_ark', "Found \"$value\" in place of \"$ark_value\"")
+            if $value ne $ark_value;
+    }
+
+    # Is the correct ARK somewhere, good/wrong field?
     for my $field ( @{$record->fields} ) {
         if ( ref $field eq 'MARC::Moose::Field::Std' ) {
             for ( @{$field->subf} ) {

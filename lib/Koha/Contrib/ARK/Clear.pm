@@ -34,6 +34,8 @@ sub action {
     else {
         $record->delete($tag);
     }
+
+    $self->ark->current_modified();
 }
 
 
