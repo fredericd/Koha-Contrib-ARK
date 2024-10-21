@@ -331,7 +331,9 @@ sub run {
                 if ( $self->cmd ne 'check' && $self->current->{modified} ) {
                     $self->writer->write($biblio, $record);
                 }
-                push @{$self->explain->{result}->{records}}, $self->current;
+                if ($self->cmd eq 'check' || $self->current->{modified}) {
+                    push @{$self->explain->{result}->{records}}, $self->current;
+                }
             }
             my $count = $self->reader->count;
             next unless $progress;
