@@ -8,11 +8,14 @@ with 'Koha::Contrib::ARK::Action';
 
 
 sub action {
-    my ($self, $biblionumber, $record) = @_;
+    my $self = shift;
+    my $ark = $self->ark;
+    my $current = $ark->current;
+    my $biblio = $current->{biblio};
+    my $record = $biblio->{record};
 
     return unless $record;
 
-    my $ark = $self->ark;
     my $ka = $ark->c->{ark}->{koha}->{ark};
     my ($tag, $letter) = ($ka->{tag}, $ka->{letter});
 
@@ -35,7 +38,7 @@ sub action {
         $record->delete($tag);
     }
 
-    $self->ark->current_modified();
+    $ark->current_modified();
 }
 
 

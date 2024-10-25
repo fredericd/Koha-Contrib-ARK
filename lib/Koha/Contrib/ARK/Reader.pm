@@ -87,13 +87,10 @@ sub read {
 
     $self->count( $self->count + 1 );
 
-    my ($biblio, $record);
-    if ($biblio = Koha::Biblios->find( $biblionumber )) {
-        $record = MARC::Moose::Record::new_from($biblio->metadata->record(), 'Legacy');
-    } 
-    $self->ark->set_current( $biblio, $record );
+    my $biblio = Koha::Biblios->find($biblionumber);
+    $self->ark->set_current($biblio);
 
-    return ($biblio, $record);
+    return 1;
 }
 
 

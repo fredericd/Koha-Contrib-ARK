@@ -14,7 +14,7 @@ L<Koha::Contrib::ARK> object.
 has ark => ( is => 'rw', isa => 'Koha::Contrib::ARK' );
 
 
-=method action($biblionumber, $record)
+=method action()
 
 Do something with Koha biblio record.
 

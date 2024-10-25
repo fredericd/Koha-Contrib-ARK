@@ -17,16 +17,22 @@ has ark => ( is => 'rw', isa => 'Koha::Contrib::ARK' );
 
 
 sub write {
-    my ($self, $biblio, $record) = @_;
+    my $self = shift;
+
+    my $ark = $self->ark;
+    return unless $ark->doit;
+
+    my $current = $ark->current;
+    my $biblio = $current->{biblio};
+    my $record = $biblio->{record};
 
     return unless $record;
 
-    my $a = $self->ark;
-    if ($a->doit) {
-        ModBiblio( $record->as('Legacy'), $biblio->biblionumber, $biblio->frameworkcode);
-    }
-    $a->current->{after} = Koha::Contrib::ARK::tojson($record)
-        if $a->debug;
+    ModBiblio(
+        $record->as('Legacy'),
+        $biblio->biblionumber,
+        $biblio->frameworkcode
+    );
 }
 
 
